@@ -2,13 +2,14 @@ package com.codedifferently.tankofamerica.domain.account.services;
 
 import com.codedifferently.tankofamerica.domain.account.models.Account;
 import com.codedifferently.tankofamerica.domain.account.repo.AccountRepo;
-import com.codedifferently.tankofamerica.domain.transactions.models.Transaction;
+
 import com.codedifferently.tankofamerica.domain.user.exceptions.UserNotFoundException;
 import com.codedifferently.tankofamerica.domain.user.models.User;
 import com.codedifferently.tankofamerica.domain.user.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ public class AccountServiceImpl implements AccountService{
     private AccountRepo accountRepo;
     private UserService userService;
 
+
     @Autowired
     public AccountServiceImpl(AccountRepo accountRepo, UserService userService) {
         this.accountRepo = accountRepo;
@@ -25,15 +27,33 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
-    public Account create(Long userId, Account account) throws UserNotFoundException {
-        User owner = userService.getById(userId);
-        account.setOwner(owner);
+    public Account create(Long userId, Account account, Double balance) throws UserNotFoundException {
+        User owner = null;
+        try {
+            owner = userService.getById(userId);
+            account.setOwner(owner);
+            account.setBalance(balance);
+        }catch(UserNotFoundException e){
+
+        }
         return accountRepo.save(account);
     }
 
+
+
+
+
+
     @Override
-    public String getById(String id) {
-        return null;
+    public Account getById(UUID id) throws AccountNotFoundException {
+        Iterable<Account>accounts = accountRepo.findAll();
+        for(Account account:accounts){
+            if(account.getId().equals(id)){
+                return account;
+            }
+        }
+        throw new AccountNotFoundException("account not there");
+
     }
 
     @Override
@@ -58,60 +78,31 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
-    public Double viewBalance(Long userId) throws UserNotFoundException {
-        double returnBalance=0.0;
-        User owner = userService.getById(userId);
-        Long id = owner.getId();
-        List<Account> accounts = accountRepo.findByOwner(owner);
-        for (Account account: accounts) {
-            System.out.println(accounts);
-            if (account.getOwner().getId()==id){
-                returnBalance=  account.getBalance();
-            }else{
-                throw new UserNotFoundException("the user is not found to complete deposit");
-            }
-        }
-        System.out.println("this is your current balance \n");
-        return returnBalance;
+    public String deposit(UUID id, Double amount) throws AccountNotFoundException {
+        Account account = getById(id);
+        account.setBalance(account.getBalance() + amount);
+         accountRepo.save(account);
 
+
+         return String.format("%s' account has a current balance  of %.2f after deposit ", account.getOwner().getFirstName(),account.getBalance());
     }
 
     @Override
-    public void deposit(Long userId, double depositValue) throws UserNotFoundException {
+    public String withdrawal(UUID id, Double amount) throws AccountNotFoundException {
+        Account account = getById(id);
+        account.setBalance(account.getBalance() -amount);
+         accountRepo.save(account);
+         //Transaction transaction =new Transaction(id,(-1)*amount);
+        // transactionRepo.save(transaction);
+         return String.format("%s' account has a current balance  of %.2f after withdrawal ", account.getOwner().getFirstName(),account.getBalance());
 
-        User owner = userService.getById(userId);
-        Long id = owner.getId();
-        List<Account> accounts = accountRepo.findByOwner(owner);
-        for (Account account: accounts) {
-            if (account.getOwner().getId()==id){
-
-                System.out.println(account.getBalance());
-                 account.setBalance(account.getBalance()+depositValue);
-            }else{
-                throw new UserNotFoundException("the user is not found to complete deposit");
-            }
-        }
 
     }
 
-    @Override
-    public void withdraw(Long userId, double withdrawValue) throws UserNotFoundException {
-        User owner = userService.getById(userId);
-        Long id = owner.getId();
-        List<Account> accounts = accountRepo.findByOwner(owner);
-        for (Account account: accounts) {
-            System.out.println(accounts);
-            if (account.getOwner().getId()==id){
-                account.setBalance(account.getBalance()-withdrawValue);
-
-            }else{
-                throw new UserNotFoundException("the user is not found to complete withdraw ");
-            }
-        }
-    }
 
     @Override
-    public Transaction createTransaction(UUID accountId, double transactionAmount) {
-        return null;
+    public String viewBalance(UUID uuid) throws AccountNotFoundException,UserNotFoundException {
+        Account account = getById(uuid);
+        return String.format("%s' account has a current balance  of %.2f ", account.getOwner().getFirstName(),account.getBalance());
     }
 }

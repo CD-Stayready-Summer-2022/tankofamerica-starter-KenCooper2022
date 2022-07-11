@@ -1,10 +1,12 @@
 package com.codedifferently.tankofamerica.domain.account.models;
 
+
 import com.codedifferently.tankofamerica.domain.user.models.User;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -21,29 +23,24 @@ public class Account {
 
     @ManyToOne()
     private User owner;
-    public Account(String name){
-        this.name = name;
-        balance=0.0;
-    }
-
-    public Account(String name, User owner) {
-        this.name = name;
-        this.owner = owner;
-        balance=0.0;
-    }
-
-
-    public Double getBalance() {
-        return balance;
-    }
-
-    public void setBalance(Double balance) {
-        this.balance = balance;
-    }
-
-
 
     public Account() {
+    }
+
+    public Account(String name){
+        this.name = name;
+    }
+
+
+    public Account(String name, User owner){
+        this.name = name;
+        this.owner = owner;
+    }
+
+    public Account(String name, Double balance ,User owner) {
+        this.name = name;
+        this.owner = owner;
+        this.balance= 0.0;
     }
 
 
@@ -69,6 +66,13 @@ public class Account {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+    public Double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Double balance) {
+        this.balance = balance;
     }
 
     public String toString(){
